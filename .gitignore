@@ -1,3 +1,25 @@
 data/
 __pycache__/
 *.pyc
+
+# PyCharm / IntelliJ
+.idea/
+*.iws
+*.iml
+*.ipr
+    
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+    
+# Virtual Environments
+venv/
+.venv/
+env/
+    
+# Mac system files
+.DS_Store
+    
+# Private project data (Your period tracking data)
+data/
