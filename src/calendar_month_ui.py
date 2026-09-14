@@ -25,6 +25,7 @@ class CalendarMonthUI:
                      text_color=UIConstants.TEXT_COLOR, background_color=UIConstants.CELL_BG, size=UIConstants.COL_SIZE)],
             [sg.Image("", key=f"-DAY_IMG_{index}-", enable_events=True, size=(40, 40))]
         ]
+        # Frame background remains CELL_BG always
         return sg.Frame("", cell_content, key=f"-DAY_FRAME_{index}-", border_width=1, 
                         element_justification='center', background_color=UIConstants.CELL_BG, relief=sg.RELIEF_FLAT)
 
@@ -96,10 +97,47 @@ class CalendarMonthUI:
                 else:
                     bg, txt_color = UIConstants.CELL_BG, UIConstants.TEXT_COLOR
 
-                window[f"-DAY_FRAME_{cell_index}-"].Widget.configure(bg=bg)
+                # REMOVED: window[f"-DAY_FRAME_{cell_index}-"].Widget.configure(bg=bg)
+                # Only the text label gets the highlighted color now
                 window[f"-DAY_TEXT_{cell_index}-"].update(str(day_num), background_color=bg, text_color=txt_color)
                 window[f"-DAY_IMG_{cell_index}-"].update(filename=image_path)
                 self.cell_mapping[cell_index] = current_date
                 current_date += timedelta(days=1)
         
         window["-VIEW_DATE-"].update(f"{self.view_start_date.year}", text_color=UIConstants.TEXT_COLOR)
+
+    def run(self, controller):
+        sg.theme('Default1')
+        window = sg.Window("Moon Flow", self.build_layout(), 
+                           element_justification='center', background_color=UIConstants.BG_COLOR, finalize=True)
+        self.refresh_grid(window)
+        
+        while True:
+            event, values = window.read()
+            if event in (sg.WIN_CLOSED, "Exit"):
+                window.close()
+                return "CLOSE"
+            if event == "↑ Prev Week":
+                self.view_start_date -= timedelta(days=7)
+                self.refresh_grid(window)
+            elif event == "Next Week ↓":
+                self.view_start_date += timedelta(days=7)
+                self.refresh_grid(window)
+            elif event == "← Oldest":
+                self.view_start_date = controller.get_oldest_date()
+                self.refresh_grid(window)
+            elif event == "Newest →":
+                current_monday = self.now - timedelta(days=self.now.weekday())
+                self.view_start_date = current_monday - timedelta(weeks=4)
+                self.refresh_grid(window)
+            elif event == "Year View":
+                controller.open_year_view()
+            elif event == "Moon View":
+                controller.open_moon_view()
+            elif event and event.startswith("-DAY_IMG_"):
+                cell_index = int(event.replace("-DAY_IMG_", "").replace("-", ""))
+                clicked_date = self.cell_mapping.get(cell_index)
+                if clicked_date:
+                    cycle_data_logic.toggle_period_day(clicked_date)
+                    self.refresh_grid(window)
+        window.close()
