@@ -44,7 +44,7 @@ def get_moon_image_path(date=None):
     if day_index > 28:
         day_index = 28
 
-    # Use os.path.join to create a full absolute path
+    # use absolute path
     return os.path.join(ROOT_DIR, "assets", f"Moon28{day_index:02d}.png")
 
 # --- Test it ---

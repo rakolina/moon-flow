@@ -51,7 +51,7 @@ def initialize_moon_cache():
     # 3. Iterate through every day from start_date to end_date
     current_day = start_date
     while current_day <= end_date:
-        # Create the month key (e.g., "2026-08")
+        # Create the month key ("2026-08")
         month_key = current_day.strftime("%Y-%m")
         day_str = str(current_day.day)
 
