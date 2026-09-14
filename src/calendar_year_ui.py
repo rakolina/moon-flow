@@ -1,7 +1,8 @@
 import PySimpleGUI as sg
 from datetime import datetime
 import calendar
-import cycle_logic
+import cycle_data_logic
+import moon_cache_logic
 from ui_constants import UIConstants
 
 class CalendarYearUI:
@@ -31,23 +32,25 @@ class CalendarYearUI:
                     week_row.append(sg.Text("", size=(4, 2), background_color=UIConstants.BG_COLOR))
                 else:
                     date_obj = datetime(self.now.year, month_idx, day)
-                    is_period = cycle_logic.is_period_day(date_obj, data=data)
-                    is_fertile = cycle_logic.is_fertile_day(date_obj, data=data)
+                    is_period = cycle_data_logic.is_period_day(date_obj, data=data)
+                    is_fertile = cycle_data_logic.is_fertile_day(date_obj, data=data)
                     
                     bg = UIConstants.PERIOD_BG if is_period else (UIConstants.FERTILE_BG if is_fertile else UIConstants.CELL_BG)
                     month_key = date_obj.strftime("%Y-%m")
                     img = data.get("moons", {}).get(month_key, {}).get(str(day))
-                    
-                    # FIX: Wrap the image in a Frame to ensure the background color is visible.
-                    # PySimpleGUI's Image element often hides its own background_color.
-                    week_row.append(sg.Frame("", [[sg.Image(filename=img, size=(20, 20))]], 
-                                              background_color=bg, border_width=0, pad=(0,0)))
+                    week_row.append(sg.Image(filename=img, background_color=bg, size=(20, 20)))
             month_layout.append(week_row)
         
         return sg.Frame("", month_layout, border_width=1, background_color=UIConstants.BG_COLOR, element_justification='center')
 
     def show(self):
-        data = cycle_logic.load_user_data()
+        # Combine data for the view
+        data = {
+            "moons": moon_cache_logic.load_moon_data(),
+            "period_days": cycle_data_logic.load_cycle_data()["period_days"],
+            "fertile_days": cycle_data_logic.load_cycle_data()["fertile_days"]
+        }
+        
         year_grid = []
         for row_idx in range(4):
             row = []

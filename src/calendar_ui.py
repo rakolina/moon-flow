@@ -1,8 +1,10 @@
 import PySimpleGUI as sg
 from datetime import datetime, timedelta
-import cycle_logic
+import moon_cache_logic
+import cycle_data_logic
 from calendar_month_ui import CalendarMonthUI
 from calendar_year_ui import CalendarYearUI
+from calendar_moon_ui import CalendarMoonUI
 
 # --- App Controller ---
 class CalendarUI:
@@ -10,8 +12,7 @@ class CalendarUI:
         self.user_data = user_data
 
     def get_oldest_date(self):
-        data = cycle_logic.load_user_data()
-        moons = data.get("moons", {})
+        moons = moon_cache_logic.load_moon_data()
         if not moons:
             return datetime.now() - timedelta(days=datetime.now().weekday())
         sorted_months = sorted(moons.keys())
@@ -25,6 +26,10 @@ class CalendarUI:
     def open_year_view(self):
         year_view = CalendarYearUI(self.user_data)
         year_view.show()
+
+    def open_moon_view(self):
+        moon_view = CalendarMoonUI(self.user_data)
+        moon_view.show()
 
     def run(self):
         editor = CalendarMonthUI(self.user_data)

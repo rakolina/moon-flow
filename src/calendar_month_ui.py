@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 from datetime import datetime, timedelta
-import cycle_logic
+import cycle_data_logic
+import moon_cache_logic
 from ui_constants import UIConstants
 
 class CalendarMonthUI:
@@ -57,13 +58,16 @@ class CalendarMonthUI:
             header_row,
             grid_rows,
             [
-                sg.Button("Year View", size=(12, 1), button_color=('white', '#606060')),
+                sg.Button("Moon View", size=(12, 1), button_color=('white', '#404040')),
+                sg.Button("Year View", size=(12, 1), button_color=('white', '#404040')),
                 sg.Button("Exit", size=(12, 1), pad=(0, 20), button_color=('white', '#404040'))
             ]
         ]
 
     def refresh_grid(self, window):
-        current_data = cycle_logic.load_user_data()
+        current_cycle_data = cycle_data_logic.load_cycle_data()
+        current_moon_data = moon_cache_logic.load_moon_data()
+        
         current_date = self.view_start_date
         last_month = None
         today = datetime.now().date()
@@ -78,10 +82,10 @@ class CalendarMonthUI:
                 cell_index = (row_idx * 7) + col_idx
                 day_num = current_date.day
                 month_key = current_date.strftime("%Y-%m")
-                month_dict = current_data.get("moons", {}).get(month_key, {})
+                month_dict = current_moon_data.get(month_key, {})
                 image_path = month_dict.get(str(day_num), None)
-                is_period = cycle_logic.is_period_day(current_date, data=current_data)
-                is_fertile = cycle_logic.is_fertile_day(current_date, data=current_data)
+                is_period = cycle_data_logic.is_period_day(current_date, data=current_cycle_data)
+                is_fertile = cycle_data_logic.is_fertile_day(current_date, data=current_cycle_data)
                 
                 if current_date.date() == today:
                     bg, txt_color = UIConstants.TODAY_BG, UIConstants.TODAY_TEXT
@@ -126,10 +130,12 @@ class CalendarMonthUI:
                 self.refresh_grid(window)
             elif event == "Year View":
                 controller.open_year_view()
+            elif event == "Moon View":
+                controller.open_moon_view()
             elif event and event.startswith("-DAY_IMG_"):
                 cell_index = int(event.replace("-DAY_IMG_", "").replace("-", ""))
                 clicked_date = self.cell_mapping.get(cell_index)
                 if clicked_date:
-                    cycle_logic.toggle_period_day(clicked_date)
+                    cycle_data_logic.toggle_period_day(clicked_date)
                     self.refresh_grid(window)
         window.close()
