@@ -8,7 +8,6 @@ from ui_constants import UIConstants
 class CalendarYearUI:
     def __init__(self, user_data):
         self.user_data = user_data
-        self.moons = user_data.get("moons", {})
         self.now = datetime.now()
 
     def create_month_panel(self, month_idx, data):
@@ -32,28 +31,22 @@ class CalendarYearUI:
                     week_row.append(sg.Text("", size=(4, 2), background_color=UIConstants.BG_COLOR))
                 else:
                     date_obj = datetime(self.now.year, month_idx, day)
-                    is_period = cycle_data_logic.is_period_day(date_obj, data=data["cycle"])
-                    is_fertile = cycle_data_logic.is_fertile_day(date_obj, data=data["cycle"])
-                    
+                    is_period = cycle_data_logic.is_period_day(date_obj, data=data)
+                    is_fertile = cycle_data_logic.is_fertile_day(date_obj, data=data)
                     bg = UIConstants.PERIOD_BG if is_period else (UIConstants.FERTILE_BG if is_fertile else UIConstants.CELL_BG)
                     month_key = date_obj.strftime("%Y-%m")
-                    
-                    # Correctly access the path from the dictionary
-                    moon_entry = data["moons"].get(month_key, {}).get(str(day), {})
+                    moon_entry = data.get("moons", {}).get(month_key, {}).get(str(day), {})
                     img = moon_entry.get("path") if isinstance(moon_entry, dict) else moon_entry
-                    
                     week_row.append(sg.Image(filename=img, background_color=bg, size=(20, 20)))
             month_layout.append(week_row)
         
         return sg.Frame("", month_layout, border_width=1, background_color=UIConstants.BG_COLOR, element_justification='center')
 
-    def show(self):
-        # Combined data for the view
+    def build_layout(self):
         data = {
             "moons": moon_cache_logic.load_moon_data(),
             "cycle": cycle_data_logic.load_cycle_data()
         }
-        
         year_grid = []
         for row_idx in range(4):
             row = []
@@ -63,18 +56,9 @@ class CalendarYearUI:
                     row.append(self.create_month_panel(month_idx, data))
             year_grid.append(row)
 
-        layout = [
+        return [
             [sg.Text(f"Year View {self.now.year}", font=('Arial', 16, 'bold'), text_color=UIConstants.TEXT_COLOR, 
                      background_color=UIConstants.BG_COLOR, expand_x=True, justification='center')],
             [sg.Column(year_grid, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=UIConstants.BG_COLOR)],
             [sg.Button("Close Year View", button_color=('white', '#404040'))]
         ]
-
-        year_window = sg.Window("Yearly Moon View", layout, background_color=UIConstants.BG_COLOR, 
-                               element_justification='center', finalize=True, resizable=True)
-        
-        while True:
-            event, values = year_window.read()
-            if event in (sg.WIN_CLOSED, "Close Year View"):
-                break
-        year_window.close()

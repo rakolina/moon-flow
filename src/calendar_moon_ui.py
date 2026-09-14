@@ -29,9 +29,7 @@ class CalendarMoonUI:
                 month_key = f"{self.now.year}-{month_idx:02d}"
                 month_moons = moon_data.get(month_key, {})
                 found_color = UIConstants.CELL_BG
-                
                 for day_str, day_info in month_moons.items():
-                    # Check the explicit "phase" key instead of searching strings
                     if isinstance(day_info, dict) and day_info.get("phase") == phase_idx:
                         date_obj = datetime(self.now.year, month_idx, int(day_str))
                         if cycle_data_logic.is_period_day(date_obj, data=cycle_data):
@@ -44,7 +42,7 @@ class CalendarMoonUI:
                                       border_width=0, background_color=found_color, pad=(1, 2)))
             grid_rows.append(row)
 
-        layout = [
+        return [
             [sg.Text("Lunar Pattern View", font=('Arial', 16, 'bold'), text_color=UIConstants.TEXT_COLOR, 
                      background_color=UIConstants.BG_COLOR, expand_x=True, justification='center')],
             [sg.Text("X-Axis: Moon Phase (1-28) | Y-Axis: Month", font=('Arial', 10, 'italic'), 
@@ -53,15 +51,3 @@ class CalendarMoonUI:
             *grid_rows,
             [sg.Button("Close Moon View", button_color=('white', '#404040'))]
         ]
-        return layout
-
-    def show(self):
-        layout = self.build_layout()
-        moon_window = sg.Window("Moon Phase Pattern", layout, background_color=UIConstants.BG_COLOR, 
-                               element_justification='center', finalize=True, resizable=True)
-        
-        while True:
-            event, values = moon_window.read()
-            if event in (sg.WIN_CLOSED, "Close Moon View"):
-                break
-        moon_window.close()
