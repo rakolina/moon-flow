@@ -3,12 +3,19 @@ from calendar_ui import run_app
 
 
 def main():
-    # 1. Sync and load the moon data from JSON
-    # This handles the 5-week rolling cache we built
-    month_moons = initialize_moon_cache()
+    print("🚀 Application starting...")
+    while True:
+        print("📅 Initializing moon cache (this may take a minute on first run)...")
+        user_data = initialize_moon_cache()
+        print("✅ Moon cache ready!")
 
-    # 2. Pass that data into the UI
-    run_app(month_moons)
+        print("🖥️ Attempting to launch UI window...")
+        status = run_app(user_data)
+        print(f"🏁 App returned status: {status}")
+
+        if status == "CLOSE":
+            print("👋 Exiting application.")
+            break
 
 
 if __name__ == "__main__":
