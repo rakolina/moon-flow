@@ -25,7 +25,6 @@ class CalendarMonthUI:
                      text_color=UIConstants.TEXT_COLOR, background_color=UIConstants.CELL_BG, size=UIConstants.COL_SIZE)],
             [sg.Image("", key=f"-DAY_IMG_{index}-", enable_events=True, size=(40, 40))]
         ]
-        # Frame background remains CELL_BG always
         return sg.Frame("", cell_content, key=f"-DAY_FRAME_{index}-", border_width=1, 
                         element_justification='center', background_color=UIConstants.CELL_BG, relief=sg.RELIEF_FLAT)
 
@@ -88,18 +87,27 @@ class CalendarMonthUI:
                 is_period = cycle_data_logic.is_period_day(current_date, data=current_cycle_data)
                 is_fertile = cycle_data_logic.is_fertile_day(current_date, data=current_cycle_data)
                 
-                if current_date.date() == today:
-                    bg, txt_color = UIConstants.TODAY_BG, UIConstants.TODAY_TEXT
-                elif is_period:
-                    bg, txt_color = UIConstants.PERIOD_BG, UIConstants.TEXT_COLOR
+                # 1. Determine the "Status Color" for the date number label
+                if is_period:
+                    status_bg = UIConstants.PERIOD_BG
+                    txt_color = UIConstants.TEXT_COLOR
                 elif is_fertile:
-                    bg, txt_color = UIConstants.FERTILE_BG, UIConstants.TEXT_COLOR
+                    status_bg = UIConstants.FERTILE_BG
+                    txt_color = UIConstants.TEXT_COLOR
                 else:
-                    bg, txt_color = UIConstants.CELL_BG, UIConstants.TEXT_COLOR
+                    status_bg = UIConstants.CELL_BG
+                    txt_color = UIConstants.TEXT_COLOR
 
-                # REMOVED: window[f"-DAY_FRAME_{cell_index}-"].Widget.configure(bg=bg)
-                # Only the text label gets the highlighted color now
-                window[f"-DAY_TEXT_{cell_index}-"].update(str(day_num), background_color=bg, text_color=txt_color)
+                # 2. Determine the "Frame Color" for the area behind the moon image
+                if current_date.date() == today:
+                    frame_bg = UIConstants.TODAY_FRAME_BG
+                else:
+                    frame_bg = UIConstants.CELL_BG
+
+                # Update Frame background (The "Today" highlight)
+                window[f"-DAY_FRAME_{cell_index}-"].Widget.configure(bg=frame_bg)
+                # Update Date Text background (The status marker)
+                window[f"-DAY_TEXT_{cell_index}-"].update(str(day_num), background_color=status_bg, text_color=txt_color)
                 window[f"-DAY_IMG_{cell_index}-"].update(filename=image_path)
                 self.cell_mapping[cell_index] = current_date
                 current_date += timedelta(days=1)

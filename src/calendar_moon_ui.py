@@ -1,8 +1,11 @@
 import PySimpleGUI as sg
-from datetime import datetime
+from datetime import datetime, timedelta
+import os
 import cycle_data_logic
 import moon_cache_logic
 from ui_constants import UIConstants
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class CalendarMoonUI:
     def __init__(self, user_data):
@@ -13,25 +16,51 @@ class CalendarMoonUI:
         cycle_data = cycle_data_logic.load_cycle_data()
         moon_data = moon_cache_logic.load_moon_data()
         
+        # 1. Headers: Replace numbers with Moon Phase Images (1-28)
         headers = []
         for i in range(1, 29):
-            headers.append(sg.Text(str(i), font=('Arial', 8, 'bold'), text_color=UIConstants.TEXT_COLOR, 
-                                    background_color=UIConstants.CELL_BG, size=(4, 1), justification='center'))
+            img_path = os.path.join(ROOT_DIR, "assets", f"Moon28{i:02d}.png")
+            # We use a smaller size for headers to ensure the view remains compact
+            headers.append(sg.Image(filename=img_path, size=(30, 30), pad=(2, 0)))
         
+        # 2. Group the year into Lunar Cycles
+        cycles = []
+        current_cycle = []
+        
+        start_of_year = datetime(self.now.year, 1, 1)
+        end_of_year = datetime(self.now.year, 12, 31)
+        
+        cursor = start_of_year
+        while cursor <= end_of_year:
+            month_key = cursor.strftime("%Y-%m")
+            day_str = str(cursor.day)
+            month_moons = moon_data.get(month_key, {})
+            day_info = month_moons.get(day_str, {})
+            phase = day_info.get("phase") if isinstance(day_info, dict) else None
+            
+            if phase is not None:
+                if phase == 1 and current_cycle:
+                    cycles.append(current_cycle)
+                    current_cycle = []
+                current_cycle.append({"date": cursor, "phase": phase})
+            cursor += timedelta(days=1)
+        
+        if current_cycle:
+            cycles.append(current_cycle)
+
+        # 3. Build Grid Rows
         grid_rows = []
-        for month_idx in range(1, 13):
+        for cycle_idx, cycle_days in enumerate(cycles, 1):
             row = []
-            month_name = datetime(self.now.year, month_idx, 1).strftime("%B")
-            row.append(sg.Text(month_name, font=('Arial', 10, 'bold'), text_color=UIConstants.TEXT_COLOR, 
+            month_name = "Cycle" # Simplified label for the cycle
+            row.append(sg.Text(f"Cycle {cycle_idx}", font=('Arial', 10, 'bold'), text_color=UIConstants.TEXT_COLOR, 
                                background_color=UIConstants.BG_COLOR, size=(10, 1), justification='right', pad=(0, 2)))
             
             for phase_idx in range(1, 29):
-                month_key = f"{self.now.year}-{month_idx:02d}"
-                month_moons = moon_data.get(month_key, {})
                 found_color = UIConstants.CELL_BG
-                for day_str, day_info in month_moons.items():
-                    if isinstance(day_info, dict) and day_info.get("phase") == phase_idx:
-                        date_obj = datetime(self.now.year, month_idx, int(day_str))
+                for day_info in cycle_days:
+                    if day_info["phase"] == phase_idx:
+                        date_obj = day_info["date"]
                         if cycle_data_logic.is_period_day(date_obj, data=cycle_data):
                             found_color = UIConstants.PERIOD_BG
                             break
@@ -42,12 +71,24 @@ class CalendarMoonUI:
                                       border_width=0, background_color=found_color, pad=(1, 2)))
             grid_rows.append(row)
 
-        return [
+        layout = [
             [sg.Text("Lunar Pattern View", font=('Arial', 16, 'bold'), text_color=UIConstants.TEXT_COLOR, 
                      background_color=UIConstants.BG_COLOR, expand_x=True, justification='center')],
-            [sg.Text("X-Axis: Moon Phase (1-28) | Y-Axis: Month", font=('Arial', 10, 'italic'), 
+            [sg.Text("Columns represent the 28 Moon Phases", font=('Arial', 10, 'italic'), 
                      text_color='gray', background_color=UIConstants.BG_COLOR, justification='center')],
             [headers],
             *grid_rows,
             [sg.Button("Close Moon View", button_color=('white', '#404040'))]
         ]
+        return layout
+
+    def show(self):
+        layout = self.build_layout()
+        moon_window = sg.Window("Moon Phase Pattern", layout, background_color=UIConstants.BG_COLOR, 
+                               element_justification='center', finalize=True, resizable=True)
+        
+        while True:
+            event, values = moon_window.read()
+            if event in (sg.WIN_CLOSED, "Close Moon View"):
+                break
+        moon_window.close()

@@ -1,3 +1,5 @@
+from tkinter.constants import CURRENT
+
 import PySimpleGUI as sg
 from datetime import datetime, timedelta
 import moon_cache_logic
@@ -5,6 +7,19 @@ import cycle_data_logic
 from calendar_month_ui import CalendarMonthUI
 from calendar_year_ui import CalendarYearUI
 from calendar_moon_ui import CalendarMoonUI
+
+PREV_WEEK = "↑ Prev Week"
+
+NEXT_WEEK = "Next Week ↓"
+
+MOON_VIEW = "Moon View"
+
+YEAR_VIEW = "Year View"
+
+OLDEST = "← Oldest"
+
+CURRENT = "Current"
+
 
 class CalendarUI:
     def __init__(self, user_data):
@@ -65,22 +80,22 @@ class CalendarUI:
                     self.month_window.close()
                     return "CLOSE"
                 
-                if event == "↑ Prev Week":
+                if event == PREV_WEEK:
                     self.month_ui.view_start_date -= timedelta(days=7)
                     self.month_ui.refresh_grid(self.month_window)
-                elif event == "Next Week ↓":
+                elif event == NEXT_WEEK:
                     self.month_ui.view_start_date += timedelta(days=7)
                     self.month_ui.refresh_grid(self.month_window)
-                elif event == "← Oldest":
+                elif event == OLDEST:
                     self.month_ui.view_start_date = self.get_oldest_date()
                     self.month_ui.refresh_grid(self.month_window)
-                elif event == "Newest →":
+                elif event == CURRENT:
                     current_monday = datetime.now() - timedelta(days=datetime.now().weekday())
                     self.month_ui.view_start_date = current_monday - timedelta(weeks=4)
                     self.month_ui.refresh_grid(self.month_window)
-                elif event == "Year View":
+                elif event == YEAR_VIEW:
                     self.open_year_view()
-                elif event == "Moon View":
+                elif event == MOON_VIEW:
                     self.open_moon_view()
                 elif event and event.startswith("-DAY_IMG_"):
                     cell_index = int(event.replace("-DAY_IMG_", "").replace("-", ""))
