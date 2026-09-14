@@ -6,22 +6,28 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CYCLE_DATA_FILE = os.path.join(ROOT_DIR, "data", "cycle_data.json")
 
 def load_cycle_data():
-    """Loads the period and fertility data from JSON."""
+    """
+    Loads period and fertility data.
+    If file is missing, empty, or invalid, returns default empty structure.
+    Does NOT touch moon_cache.json.
+    """
     if not os.path.exists(CYCLE_DATA_FILE):
         return {"period_days": [], "fertile_days": []}
-    with open(CYCLE_DATA_FILE, "r") as f:
-        try:
+    
+    try:
+        with open(CYCLE_DATA_FILE, "r") as f:
             data = json.load(f)
             if not isinstance(data, dict):
-                data = {}
+                return {"period_days": [], "fertile_days": []}
+            
             data.setdefault("period_days", [])
             data.setdefault("fertile_days", [])
             return data
-        except (json.JSONDecodeError, IOError):
-            return {"period_days": [], "fertile_days": []}
+    except (json.JSONDecodeError, IOError):
+        return {"period_days": [], "fertile_days": []}
 
 def save_cycle_data(cycle_data):
-    """Saves the period and fertility data to JSON."""
+    """Saves ONLY the period and fertility data to cycle_data.json."""
     data_folder = os.path.join(ROOT_DIR, "data")
     os.makedirs(data_folder, exist_ok=True)
     with open(CYCLE_DATA_FILE, "w") as f:
@@ -53,7 +59,7 @@ def calculate_fertile_window(period_days):
     return all_fertile_dates
 
 def toggle_period_day(date_obj):
-    """Toggles a day and updates the cycle data file."""
+    """Toggles a day and updates only the cycle data file."""
     cycle_data = load_cycle_data()
     date_str = date_obj.strftime("%Y-%m-%d")
     

@@ -7,29 +7,38 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MOON_DATA_FILE = os.path.join(ROOT_DIR, "data", "moon_cache.json")
 
 def load_moon_data():
-    """Loads the moon phase cache from JSON."""
+    """
+    Loads the moon phase cache. 
+    If file is missing, empty, or invalid, returns an empty dictionary.
+    Does NOT touch cycle_data.json.
+    """
     if not os.path.exists(MOON_DATA_FILE):
         return {}
-    with open(MOON_DATA_FILE, "r") as f:
-        try:
+    
+    try:
+        with open(MOON_DATA_FILE, "r") as f:
             data = json.load(f)
             return data if isinstance(data, dict) else {}
-        except (json.JSONDecodeError, IOError):
-            return {}
+    except (json.JSONDecodeError, IOError):
+        return {}
 
 def save_moon_data(moons):
-    """Saves the moon phase cache to JSON."""
+    """Saves ONLY the moon phase cache to moon_cache.json."""
     data_folder = os.path.join(ROOT_DIR, "data")
     os.makedirs(data_folder, exist_ok=True)
     with open(MOON_DATA_FILE, "w") as f:
         json.dump(moons, f, indent=4)
 
 def initialize_moon_cache():
-    """Caches moon data to the moon_cache.json file."""
+    """
+    Ensures the moon cache exists and is populated.
+    Operates strictly on moon_cache.json.
+    """
     now = datetime.now()
     start_date = now - timedelta(days=180)
     end_date = now + timedelta(days=180)
 
+    # Load existing data (returns {} if missing)
     moons = load_moon_data()
     needs_update = False
 
@@ -42,8 +51,11 @@ def initialize_moon_cache():
             moons[month_key] = {}
 
         if day_str not in moons[month_key]:
-            image_path = get_moon_image_path(current_day)
-            moons[month_key][day_str] = image_path
+            image_path, phase_idx = get_moon_image_path(current_day)
+            moons[month_key][day_str] = {
+                "path": image_path,
+                "phase": phase_idx
+            }
             needs_update = True
 
         current_day += timedelta(days=1)
@@ -51,4 +63,5 @@ def initialize_moon_cache():
     if needs_update:
         save_moon_data(moons)
 
+    # Returns the moon data for the UI
     return moons

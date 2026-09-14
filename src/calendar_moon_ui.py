@@ -10,7 +10,6 @@ class CalendarMoonUI:
         self.now = datetime.now()
 
     def build_layout(self):
-        # Use combined data for the view
         cycle_data = cycle_data_logic.load_cycle_data()
         moon_data = moon_cache_logic.load_moon_data()
         
@@ -31,8 +30,9 @@ class CalendarMoonUI:
                 month_moons = moon_data.get(month_key, {})
                 found_color = UIConstants.CELL_BG
                 
-                for day_str, img_path in month_moons.items():
-                    if f"Moon28{phase_idx:02d}.png" in img_path:
+                for day_str, day_info in month_moons.items():
+                    # Check the explicit "phase" key instead of searching strings
+                    if isinstance(day_info, dict) and day_info.get("phase") == phase_idx:
                         date_obj = datetime(self.now.year, month_idx, int(day_str))
                         if cycle_data_logic.is_period_day(date_obj, data=cycle_data):
                             found_color = UIConstants.PERIOD_BG

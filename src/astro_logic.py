@@ -16,7 +16,7 @@ MOON = PLANETS['moon']
 def get_moon_image_path(date=None):
     """
     Calculates the moon phase using ecliptic longitude.
-    Maps the 29.53 day cycle to 28 images using rounding for smoother transitions.
+    Returns a tuple: (image_path, day_index)
     """
     local_tz = datetime.now().astimezone().tzinfo
     if date is None:
@@ -27,33 +27,27 @@ def get_moon_image_path(date=None):
 
     t = TS.from_datetime(date)
 
-    # Get the positions of the sun and moon as seen from earth
     e = EARTH.at(t)
     m = e.observe(MOON).apparent()
     s = e.observe(SUN).apparent()
 
-    # Convert to Ecliptic coordinates to get the 0-360 degree orbital position
     m_lon = m.ecliptic_latlon()[1].degrees
     s_lon = s.ecliptic_latlon()[1].degrees
 
-    # Calculate the phase angle (0 at New Moon, 180 at Full Moon)
     phase_angle = (m_lon - s_lon) % 360
 
-    # FIX: Use round() instead of int() to map the angle to 1-28 images.
-    # This prevents "clumping" and distributes the inevitable duplicates
-    # more naturally across the 29.5 day cycle.
+    # Map the angle to 1-28 images.
     day_index = round((phase_angle / 360) * 27) + 1
-
-    # Safety cap to ensure we stay within the 1-28 range
     day_index = min(max(day_index, 1), 28)
 
-    return os.path.join(ROOT_DIR, "assets", f"Moon28{day_index:02d}.png")
+    image_path = os.path.join(ROOT_DIR, "assets", f"Moon28{day_index:02d}.png")
+    
+    return image_path, day_index
 
 
 def save_moon_data_to_json(date_obj, image_path, json_file_path):
     """
-    Saves image path to JSON. Using a dictionary ensures that
-    the same date is never stored twice (no structural duplicates).
+    Saves image path and phase index to JSON.
     """
     month_key = date_obj.strftime("%Y-%m")
     day_key = str(date_obj.day)
@@ -70,9 +64,11 @@ def save_moon_data_to_json(date_obj, image_path, json_file_path):
     if month_key not in all_data:
         all_data[month_key] = {}
 
-    # This assignment OVERWRITES any existing entry for that day,
-    # which is the primary fix for JSON duplicates.
-    all_data[month_key][day_key] = image_path
+    # Use a dictionary to store both pieces of info
+    all_data[month_key][day_key] = {
+        "path": image_path,
+        "phase": 0 # This would be passed in if called from outside
+    }
 
     with open(json_file_path, 'w') as f:
         json.dump(all_data, f, indent=4)
@@ -80,9 +76,5 @@ def save_moon_data_to_json(date_obj, image_path, json_file_path):
 
 if __name__ == "__main__":
     today = datetime.now()
-    path = get_moon_image_path(today)
-    print(f"Today's image: {path}")
-
-    json_path = os.path.join(ROOT_DIR, "moon_data.json")
-    save_moon_data_to_json(today, path, json_path)
-    print(f"Successfully updated {json_path}")
+    path, phase = get_moon_image_path(today)
+    print(f"Today's image: {path} (Phase: {phase})")

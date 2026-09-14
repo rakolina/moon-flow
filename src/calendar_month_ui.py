@@ -65,6 +65,7 @@ class CalendarMonthUI:
         ]
 
     def refresh_grid(self, window):
+        # Corrected: Load from separate logic files
         current_cycle_data = cycle_data_logic.load_cycle_data()
         current_moon_data = moon_cache_logic.load_moon_data()
         
@@ -82,8 +83,12 @@ class CalendarMonthUI:
                 cell_index = (row_idx * 7) + col_idx
                 day_num = current_date.day
                 month_key = current_date.strftime("%Y-%m")
+                
+                # Access moon data using the new dictionary structure
                 month_dict = current_moon_data.get(month_key, {})
-                image_path = month_dict.get(str(day_num), None)
+                day_data = month_dict.get(str(day_num), {})
+                image_path = day_data.get("path") if isinstance(day_data, dict) else day_data
+                
                 is_period = cycle_data_logic.is_period_day(current_date, data=current_cycle_data)
                 is_fertile = cycle_data_logic.is_fertile_day(current_date, data=current_cycle_data)
                 
