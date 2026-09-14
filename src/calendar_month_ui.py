@@ -49,15 +49,17 @@ class CalendarMonthUI:
             [
                 sg.Button("← Oldest", size=(10, 1), button_color=('white', '#404040')),
                 sg.Button("↑ Prev Week", size=(12, 1), button_color=('white', '#404040')), 
-                sg.Text(f"Viewing from {self.view_start_date.strftime('%Y-%m-%d')}", key="-VIEW_DATE-",
-                        text_color=UIConstants.TEXT_COLOR, background_color=UIConstants.BG_COLOR),
+                sg.Text(f"{self.view_start_date.year}", key="-VIEW_DATE-",
+                        font=('Arial', 12, 'bold'), text_color=UIConstants.TEXT_COLOR, background_color=UIConstants.BG_COLOR),
                 sg.Button("Next Week ↓", size=(12, 1), button_color=('white', '#404040')),
                 sg.Button("Newest →", size=(10, 1), button_color=('white', '#404040')),
-                sg.Button("Year View", size=(10, 1), button_color=('white', '#606060'))
             ],
             header_row,
             grid_rows,
-            [sg.Button("Exit", pad=(0, 20), button_color=('white', '#404040'))]
+            [
+                sg.Button("Year View", size=(12, 1), button_color=('white', '#606060')),
+                sg.Button("Exit", size=(12, 1), pad=(0, 20), button_color=('white', '#404040'))
+            ]
         ]
 
     def refresh_grid(self, window):
@@ -96,7 +98,7 @@ class CalendarMonthUI:
                 self.cell_mapping[cell_index] = current_date
                 current_date += timedelta(days=1)
         
-        window["-VIEW_DATE-"].update(f"Viewing from {self.view_start_date.strftime('%Y-%m-%d')}", text_color=UIConstants.TEXT_COLOR)
+        window["-VIEW_DATE-"].update(f"{self.view_start_date.year}", text_color=UIConstants.TEXT_COLOR)
 
     def run(self, controller):
         sg.theme('Default1')

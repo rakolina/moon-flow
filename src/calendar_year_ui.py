@@ -37,7 +37,11 @@ class CalendarYearUI:
                     bg = UIConstants.PERIOD_BG if is_period else (UIConstants.FERTILE_BG if is_fertile else UIConstants.CELL_BG)
                     month_key = date_obj.strftime("%Y-%m")
                     img = data.get("moons", {}).get(month_key, {}).get(str(day))
-                    week_row.append(sg.Image(filename=img, background_color=bg, size=(20, 20)))
+                    
+                    # FIX: Wrap the image in a Frame to ensure the background color is visible.
+                    # PySimpleGUI's Image element often hides its own background_color.
+                    week_row.append(sg.Frame("", [[sg.Image(filename=img, size=(20, 20))]], 
+                                              background_color=bg, border_width=0, pad=(0,0)))
             month_layout.append(week_row)
         
         return sg.Frame("", month_layout, border_width=1, background_color=UIConstants.BG_COLOR, element_justification='center')
@@ -56,12 +60,12 @@ class CalendarYearUI:
         layout = [
             [sg.Text(f"Year View {self.now.year}", font=('Arial', 16, 'bold'), text_color=UIConstants.TEXT_COLOR, 
                      background_color=UIConstants.BG_COLOR, expand_x=True, justification='center')],
-            [sg.Column(year_grid, scrollable=True, vertical_scroll_only=True, size=(800, 600), background_color=UIConstants.BG_COLOR)],
+            [sg.Column(year_grid, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=UIConstants.BG_COLOR)],
             [sg.Button("Close Year View", button_color=('white', '#404040'))]
         ]
 
         year_window = sg.Window("Yearly Moon View", layout, background_color=UIConstants.BG_COLOR, 
-                               element_justification='center', finalize=True)
+                               element_justification='center', finalize=True, resizable=True)
         
         while True:
             event, values = year_window.read()
