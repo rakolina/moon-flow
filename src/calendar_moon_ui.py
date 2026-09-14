@@ -16,12 +16,18 @@ class CalendarMoonUI:
         cycle_data = cycle_data_logic.load_cycle_data()
         moon_data = moon_cache_logic.load_moon_data()
         
-        # 1. Headers: Replace numbers with Moon Phase Images (1-28)
-        headers = []
+        # Fixed width for all columns to ensure perfect vertical alignment
+        COL_WIDTH = 30 
+        HORIZONTAL_PAD = 5
+
+        # 1. Headers: Moon Phase Images (1-28)
+        # We add a spacer element at the beginning of the headers row 
+        # to account for the "Cycle X" labels on the left.
+        headers = [sg.Text("", size=(10, 1), background_color=UIConstants.BG_COLOR)]
+        
         for i in range(1, 29):
             img_path = os.path.join(ROOT_DIR, "assets", f"Moon28{i:02d}.png")
-            # We use a smaller size for headers to ensure the view remains compact
-            headers.append(sg.Image(filename=img_path, size=(30, 30), pad=(2, 0)))
+            headers.append(sg.Image(filename=img_path, size=(COL_WIDTH, 30), pad=(HORIZONTAL_PAD, 0)))
         
         # 2. Group the year into Lunar Cycles
         cycles = []
@@ -52,7 +58,6 @@ class CalendarMoonUI:
         grid_rows = []
         for cycle_idx, cycle_days in enumerate(cycles, 1):
             row = []
-            month_name = "Cycle" # Simplified label for the cycle
             row.append(sg.Text(f"Cycle {cycle_idx}", font=('Arial', 10, 'bold'), text_color=UIConstants.TEXT_COLOR, 
                                background_color=UIConstants.BG_COLOR, size=(10, 1), justification='right', pad=(0, 2)))
             
@@ -67,15 +72,11 @@ class CalendarMoonUI:
                         elif cycle_data_logic.is_fertile_day(date_obj, data=cycle_data):
                             found_color = UIConstants.FERTILE_BG
                 
-                row.append(sg.Frame("", [[sg.Text("", size=(3, 1), background_color=found_color)]], 
-                                      border_width=0, background_color=found_color, pad=(1, 2)))
+                row.append(sg.Frame("", [[sg.Text("", size=(1, 1), background_color=found_color, pad=(0,0))]], 
+                                      border_width=0, background_color=found_color, size=(COL_WIDTH, 15), pad=(HORIZONTAL_PAD, 2)))
             grid_rows.append(row)
 
         layout = [
-            [sg.Text("Lunar Pattern View", font=('Arial', 16, 'bold'), text_color=UIConstants.TEXT_COLOR, 
-                     background_color=UIConstants.BG_COLOR, expand_x=True, justification='center')],
-            [sg.Text("Columns represent the 28 Moon Phases", font=('Arial', 10, 'italic'), 
-                     text_color='gray', background_color=UIConstants.BG_COLOR, justification='center')],
             [headers],
             *grid_rows,
             [sg.Button("Close Moon View", button_color=('white', '#404040'))]

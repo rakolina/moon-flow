@@ -71,6 +71,9 @@ class CalendarMonthUI:
         last_month = None
         today = datetime.now().date()
 
+        # Calculate starting month for alternating colors
+        start_month_val = self.view_start_date.year * 12 + self.view_start_date.month
+
         for row_idx in range(6):
             this_month = current_date.strftime("%B")
             month_label = this_month if this_month != last_month else ""
@@ -87,26 +90,26 @@ class CalendarMonthUI:
                 is_period = cycle_data_logic.is_period_day(current_date, data=current_cycle_data)
                 is_fertile = cycle_data_logic.is_fertile_day(current_date, data=current_cycle_data)
                 
-                # 1. Determine the "Status Color" for the date number label
-                if is_period:
-                    status_bg = UIConstants.PERIOD_BG
-                    txt_color = UIConstants.TEXT_COLOR
-                elif is_fertile:
-                    status_bg = UIConstants.FERTILE_BG
-                    txt_color = UIConstants.TEXT_COLOR
+                # Determine the base "zebra" color for the month
+                current_month_val = current_date.year * 12 + current_date.month
+                if (current_month_val - start_month_val) % 2 == 0:
+                    base_bg = UIConstants.LIGHT_CELL_BG
                 else:
-                    status_bg = UIConstants.CELL_BG
-                    txt_color = UIConstants.TEXT_COLOR
+                    base_bg = UIConstants.CELL_BG
 
-                # 2. Determine the "Frame Color" for the area behind the moon image
                 if current_date.date() == today:
                     frame_bg = UIConstants.TODAY_FRAME_BG
                 else:
                     frame_bg = UIConstants.CELL_BG
 
-                # Update Frame background (The "Today" highlight)
+                if is_period:
+                    status_bg, txt_color = UIConstants.PERIOD_BG, UIConstants.TEXT_COLOR
+                elif is_fertile:
+                    status_bg, txt_color = UIConstants.FERTILE_BG, UIConstants.TEXT_COLOR
+                else:
+                    status_bg, txt_color = base_bg, UIConstants.TEXT_COLOR
+
                 window[f"-DAY_FRAME_{cell_index}-"].Widget.configure(bg=frame_bg)
-                # Update Date Text background (The status marker)
                 window[f"-DAY_TEXT_{cell_index}-"].update(str(day_num), background_color=status_bg, text_color=txt_color)
                 window[f"-DAY_IMG_{cell_index}-"].update(filename=image_path)
                 self.cell_mapping[cell_index] = current_date

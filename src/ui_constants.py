@@ -2,6 +2,7 @@
 class UIConstants:
     BG_COLOR = '#555555'
     CELL_BG = '#666666'
+    LIGHT_CELL_BG = '#777777' # Slightly lighter for alternating months
     PERIOD_BG = '#8B4C4C'
     FERTILE_BG = '#B19CD9'
     TODAY_FRAME_BG = '#BDBDBD' # Light gray for "Today" frame

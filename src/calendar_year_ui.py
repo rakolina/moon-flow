@@ -9,6 +9,7 @@ class CalendarYearUI:
     def __init__(self, user_data):
         self.user_data = user_data
         self.now = datetime.now()
+        self.graph_keys = []
 
     def create_month_panel(self, month_idx, data):
         month_name = calendar.month_name[month_idx]
@@ -33,11 +34,23 @@ class CalendarYearUI:
                     date_obj = datetime(self.now.year, month_idx, day)
                     is_period = cycle_data_logic.is_period_day(date_obj, data=data)
                     is_fertile = cycle_data_logic.is_fertile_day(date_obj, data=data)
+                    
                     bg = UIConstants.PERIOD_BG if is_period else (UIConstants.FERTILE_BG if is_fertile else UIConstants.CELL_BG)
                     month_key = date_obj.strftime("%Y-%m")
                     moon_entry = data.get("moons", {}).get(month_key, {}).get(str(day), {})
                     img = moon_entry.get("path") if isinstance(moon_entry, dict) else moon_entry
-                    week_row.append(sg.Image(filename=img, background_color=bg, size=(20, 20)))
+                    
+                    key = f"graph_{month_idx}_{day}"
+                    self.graph_keys.append((key, img))
+                    graph = sg.Graph(
+                        canvas_size=(24, 24), 
+                        graph_bottom_left=(0, 0), 
+                        graph_top_right=(24, 24), 
+                        background_color=bg, 
+                        key=key,
+                        pad=(1, 1)
+                    )
+                    week_row.append(graph)
             month_layout.append(week_row)
         
         return sg.Frame("", month_layout, border_width=1, background_color=UIConstants.BG_COLOR, element_justification='center')
@@ -57,8 +70,26 @@ class CalendarYearUI:
             year_grid.append(row)
 
         return [
-            [sg.Text(f"Year View {self.now.year}", font=('Arial', 16, 'bold'), text_color=UIConstants.TEXT_COLOR, 
+            [sg.Text(f"{self.now.year}", font=('Arial', 16, 'bold'), text_color=UIConstants.TEXT_COLOR, 
                      background_color=UIConstants.BG_COLOR, expand_x=True, justification='center')],
             [sg.Column(year_grid, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, background_color=UIConstants.BG_COLOR)],
             [sg.Button("Close Year View", button_color=('white', '#404040'))]
         ]
+
+    def show(self):
+        layout = self.build_layout()
+        year_window = sg.Window("Yearly Moon View", layout, background_color=UIConstants.BG_COLOR, 
+                               element_justification='center', finalize=True, resizable=True)
+        
+        for key, img in self.graph_keys:
+            if img:
+                try:
+                    year_window[key].draw_image(img, location=(12, 12))
+                except:
+                    pass
+        
+        while True:
+            event, values = year_window.read()
+            if event in (sg.WIN_CLOSED, "Close Year View"):
+                break
+        year_window.close()
