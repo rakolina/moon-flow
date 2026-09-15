@@ -36,9 +36,10 @@ def get_moon_image_path(date=None):
 
     phase_angle = (m_lon - s_lon) % 360
 
-    # Map the angle to 0-29 images using a rounding approach for smoother transitions.
-    # Using 29 as the multiplier maps 0-360 degrees to indices 0-29.
-    day_index = round((phase_angle / 360) * 29)
+    # Map the angle to 0-29 images.
+    # Using a 30-day mapping to minimize duplicates by ensuring the image window
+    # is slightly smaller than the average daily moon movement (~12.19 degrees).
+    day_index = int((phase_angle / 360) * 30)
     day_index = min(max(day_index, 0), 29)
 
     image_path = os.path.join(ROOT_DIR, "assets", f"Moon28{day_index:02d}.png")

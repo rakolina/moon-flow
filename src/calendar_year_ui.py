@@ -78,18 +78,13 @@ class CalendarYearUI:
 
     def show(self):
         layout = self.build_layout()
-        year_window = sg.Window("Yearly Moon View", layout, background_color=UIConstants.BG_COLOR, 
+        year_window = sg.Window("Yearly Moon View", layout, background_color=UIConstants.BG_COLOR,
                                element_justification='center', finalize=True, resizable=True)
-        
+
         for key, img in self.graph_keys:
             if img:
                 try:
                     year_window[key].draw_image(img, location=(12, 12))
                 except:
                     pass
-        
-        while True:
-            event, values = year_window.read()
-            if event in (sg.WIN_CLOSED, "Close Year View"):
-                break
-        year_window.close()
+        return year_window

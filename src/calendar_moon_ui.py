@@ -51,13 +51,22 @@ class CalendarMoonUI:
         cycles = []
         current_cycle = []
         cursor = true_start_date
+
         while cursor <= self.now:
             phase = self._get_moon_phase(cursor)
-            if phase == 0 and current_cycle:
+
+            # Start a new cycle if we hit a New Moon (phase 0).
+            # Use a slightly higher minimum (26 days) to ensure we don't split
+            # a single New Moon event that spans multiple calendar days.
+            if phase == 0 and current_cycle and len(current_cycle) >= 26:
                 cycles.append(current_cycle)
                 current_cycle = []
+
             current_cycle.append({"date": cursor, "phase": phase})
             cursor += timedelta(days=1)
+
+
+
 
         if current_cycle:
             cycles.append(current_cycle)
@@ -66,27 +75,34 @@ class CalendarMoonUI:
         grid_rows = []
         for cycle_idx, cycle_days in enumerate(cycles, 1):
             row = []
-            # Using the date of the New Moon for the row label
-            cycle_start_str = cycle_days[0]["date"].strftime("%b %Y")
-            row.append(sg.Text(f"{cycle_start_str}", font=('Arial', 10, 'bold'), text_color=UIConstants.TEXT_COLOR,
-                               background_color=UIConstants.BG_COLOR, size=(10, 1), justification='right', pad=(0, 2)))
+            # Determine the alternating background color for blank cells in this cycle
+            blank_color = UIConstants.EMPTY_CELL_COLOR_LIGHT if cycle_idx % 2 == 1 else UIConstants.EMPTY_CELL_COLOR_DARK
 
-            for phase_idx in range(0, 30):
+            # Using the date of the New Moon for the row label
+            cycle_start_str = cycle_days[0]["date"].strftime("%Y-%m-%d")
+            row.append(sg.Text(f"{cycle_start_str}", font=('Arial', 10, 'bold'), text_color=UIConstants.TEXT_COLOR,
+                               background_color=UIConstants.BG_COLOR, size=(12, 1), justification='right', pad=(0, 2)))
+
+            for rel_idx in range(0, 30):
                 # Priority: Period > Fertile > Blank
-                found_color = UIConstants.EMPTY_CELL_COLOR
-                for day_info in cycle_days:
-                    if day_info["phase"] == phase_idx:
-                        date_obj = day_info["date"]
-                        if cycle_data_logic.is_period_day(date_obj, data=cycle_data):
-                            found_color = UIConstants.PERIOD_BG
-                            break
-                        elif cycle_data_logic.is_fertile_day(date_obj, data=cycle_data):
-                            found_color = UIConstants.FERTILE_BG
+                found_color = blank_color
+
+                # Use the relative index in the cycle as the column position.
+                # This ensures 1 cell per day, no duplicates, and no skips.
+                if rel_idx < len(cycle_days):
+                    day_info = cycle_days[rel_idx]
+                    date_obj = day_info["date"]
+                    if cycle_data_logic.is_period_day(date_obj, data=cycle_data):
+                        found_color = UIConstants.PERIOD_BG
+                    elif cycle_data_logic.is_fertile_day(date_obj, data=cycle_data):
+                        found_color = UIConstants.FERTILE_BG
 
                 # Using sg.Graph for efficiency
                 row.append(sg.Graph((COL_WIDTH, 15), (0,0), (COL_WIDTH, 15),
                                       background_color=found_color, pad=(HORIZONTAL_PAD, 2)))
             grid_rows.append(row)
+
+
 
         layout = [
             [headers],
@@ -97,11 +113,6 @@ class CalendarMoonUI:
 
     def show(self):
         layout = self.build_layout()
-        moon_window = sg.Window("Moon Phase Pattern", layout, background_color=UIConstants.BG_COLOR, 
+        moon_window = sg.Window("Moon Phase Pattern", layout, background_color=UIConstants.BG_COLOR,
                                element_justification='center', finalize=True, resizable=True)
-        
-        while True:
-            event, values = moon_window.read()
-            if event in (sg.WIN_CLOSED, "Close Moon View"):
-                break
-        moon_window.close()
+        return moon_window

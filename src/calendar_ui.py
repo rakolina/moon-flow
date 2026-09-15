@@ -30,16 +30,13 @@ class CalendarUI:
     def open_year_view(self):
         if self.year_window is None:
             year_ui = CalendarYearUI(self.user_data)
-            # Use the .show() method which handles its own window loop
-            # To prevent the main window from freezing, we run this in a way 
-            # that doesn't block if possible, but in PySimpleGUI, 
-            # separate windows usually need their own loop or sg.read_all_windows()
-            year_ui.show()
+            self.year_window = year_ui.show()
+
 
     def open_moon_view(self):
         if self.moon_window is None:
             moon_ui = CalendarMoonUI(self.user_data)
-            moon_ui.show()
+            self.moon_window = moon_ui.show()
 
     def run(self):
         # 1. Setup Month View
@@ -90,6 +87,11 @@ class CalendarUI:
                 # because they are read via read_all_windows()
                 if event in (sg.WIN_CLOSED, "Close Year View", "Close Moon View"):
                     window.close()
+                    if window == self.year_window:
+                        self.year_window = None
+                    elif window == self.moon_window:
+                        self.moon_window = None
+
         
         self.month_window.close()
 
