@@ -9,4 +9,6 @@ class UIConstants:
     TODAY_TEXT = '#000000'
     TEXT_COLOR = 'white'
     EMPTY_CELL_COLOR = '#444444'
+    EMPTY_CELL_COLOR_LIGHT = '#505050'
+    EMPTY_CELL_COLOR_DARK = '#383838'
     COL_SIZE = (8, 1)
