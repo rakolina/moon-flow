@@ -33,13 +33,13 @@ def initialize_moon_cache():
     """
     Ensures the moon cache exists and is populated.
     Operates strictly on moon_cache.json.
+    Re-populates the cache entirely to ensure consistent mapping.
     """
     now = datetime.now()
     start_date = now - timedelta(days=180)
     end_date = now + timedelta(days=180)
 
-    # Load existing data (returns {} if missing)
-    moons = load_moon_data()
+    moons = {}
     needs_update = False
 
     current_day = start_date
@@ -50,18 +50,15 @@ def initialize_moon_cache():
         if month_key not in moons:
             moons[month_key] = {}
 
-        if day_str not in moons[month_key]:
-            image_path, phase_idx = get_moon_image_path(current_day)
-            moons[month_key][day_str] = {
-                "path": image_path,
-                "phase": phase_idx
-            }
-            needs_update = True
-
+        image_path, phase_idx = get_moon_image_path(current_day)
+        moons[month_key][day_str] = {
+            "path": image_path,
+            "phase": phase_idx
+        }
+        needs_update = True
         current_day += timedelta(days=1)
 
     if needs_update:
         save_moon_data(moons)
 
-    # Returns the moon data for the UI
     return moons

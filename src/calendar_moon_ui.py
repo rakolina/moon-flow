@@ -30,20 +30,20 @@ class CalendarMoonUI:
         COL_WIDTH = 30
         HORIZONTAL_PAD = 5
 
-        # 1. Headers: Moon Phase Images (1-28)
+        # 1. Headers: Moon Phase Images (0-29)
         headers = [sg.Text("", size=(10, 1), background_color=UIConstants.BG_COLOR)]
-        for i in range(1, 29):
+        for i in range(0, 30):
             img_path = os.path.join(ROOT_DIR, "assets", f"Moon28{i:02d}.png")
             headers.append(sg.Image(filename=img_path, size=(COL_WIDTH, 30), pad=(HORIZONTAL_PAD, 0)))
 
         # 2. Define Date Range and Find True Start Date (Last New Moon)
         range_start = self.now - timedelta(days=365)
 
-        # Search backwards from range_start to find the first New Moon (phase 1)
+        # Search backwards from range_start to find the first New Moon (phase 0)
         true_start_date = range_start
         for i in range(31): # Look back up to a month
             check_date = range_start - timedelta(days=i)
-            if self._get_moon_phase(check_date) == 1:
+            if self._get_moon_phase(check_date) == 0:
                 true_start_date = check_date
                 break
 
@@ -53,7 +53,7 @@ class CalendarMoonUI:
         cursor = true_start_date
         while cursor <= self.now:
             phase = self._get_moon_phase(cursor)
-            if phase == 1 and current_cycle:
+            if phase == 0 and current_cycle:
                 cycles.append(current_cycle)
                 current_cycle = []
             current_cycle.append({"date": cursor, "phase": phase})
@@ -71,7 +71,7 @@ class CalendarMoonUI:
             row.append(sg.Text(f"{cycle_start_str}", font=('Arial', 10, 'bold'), text_color=UIConstants.TEXT_COLOR,
                                background_color=UIConstants.BG_COLOR, size=(10, 1), justification='right', pad=(0, 2)))
 
-            for phase_idx in range(1, 29):
+            for phase_idx in range(0, 30):
                 # Priority: Period > Fertile > Blank
                 found_color = UIConstants.EMPTY_CELL_COLOR
                 for day_info in cycle_days:
