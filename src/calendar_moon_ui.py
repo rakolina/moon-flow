@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 from datetime import datetime, timedelta
 import os
+import astro_logic
 import cycle_data_logic
 import moon_cache_logic
 from ui_constants import UIConstants
@@ -12,57 +13,67 @@ class CalendarMoonUI:
         self.user_data = user_data
         self.now = datetime.now()
 
+    def _get_moon_phase(self, date):
+        moon_data = moon_cache_logic.load_moon_data()
+        month_key = date.strftime("%Y-%m")
+        day_str = str(date.day)
+        if month_key in moon_data and day_str in moon_data[month_key]:
+            return moon_data[month_key][day_str].get("phase")
+        # Fallback to astronomical calculation
+        _, phase = astro_logic.get_moon_image_path(date)
+        return phase
+
     def build_layout(self):
         cycle_data = cycle_data_logic.load_cycle_data()
-        moon_data = moon_cache_logic.load_moon_data()
-        
+
         # Fixed width for all columns to ensure perfect vertical alignment
-        COL_WIDTH = 30 
+        COL_WIDTH = 30
         HORIZONTAL_PAD = 5
 
         # 1. Headers: Moon Phase Images (1-28)
-        # We add a spacer element at the beginning of the headers row 
-        # to account for the "Cycle X" labels on the left.
         headers = [sg.Text("", size=(10, 1), background_color=UIConstants.BG_COLOR)]
-        
         for i in range(1, 29):
             img_path = os.path.join(ROOT_DIR, "assets", f"Moon28{i:02d}.png")
             headers.append(sg.Image(filename=img_path, size=(COL_WIDTH, 30), pad=(HORIZONTAL_PAD, 0)))
-        
-        # 2. Group the year into Lunar Cycles
+
+        # 2. Define Date Range and Find True Start Date (Last New Moon)
+        range_start = self.now - timedelta(days=365)
+
+        # Search backwards from range_start to find the first New Moon (phase 1)
+        true_start_date = range_start
+        for i in range(31): # Look back up to a month
+            check_date = range_start - timedelta(days=i)
+            if self._get_moon_phase(check_date) == 1:
+                true_start_date = check_date
+                break
+
+        # 3. Group the range into Lunar Cycles
         cycles = []
         current_cycle = []
-        
-        start_of_year = datetime(self.now.year, 1, 1)
-        end_of_year = datetime(self.now.year, 12, 31)
-        
-        cursor = start_of_year
-        while cursor <= end_of_year:
-            month_key = cursor.strftime("%Y-%m")
-            day_str = str(cursor.day)
-            month_moons = moon_data.get(month_key, {})
-            day_info = month_moons.get(day_str, {})
-            phase = day_info.get("phase") if isinstance(day_info, dict) else None
-            
-            if phase is not None:
-                if phase == 1 and current_cycle:
-                    cycles.append(current_cycle)
-                    current_cycle = []
-                current_cycle.append({"date": cursor, "phase": phase})
+        cursor = true_start_date
+        while cursor <= self.now:
+            phase = self._get_moon_phase(cursor)
+            if phase == 1 and current_cycle:
+                cycles.append(current_cycle)
+                current_cycle = []
+            current_cycle.append({"date": cursor, "phase": phase})
             cursor += timedelta(days=1)
-        
+
         if current_cycle:
             cycles.append(current_cycle)
 
-        # 3. Build Grid Rows
+        # 4. Build Grid Rows
         grid_rows = []
         for cycle_idx, cycle_days in enumerate(cycles, 1):
             row = []
-            row.append(sg.Text(f"Cycle {cycle_idx}", font=('Arial', 10, 'bold'), text_color=UIConstants.TEXT_COLOR, 
+            # Using the date of the New Moon for the row label
+            cycle_start_str = cycle_days[0]["date"].strftime("%b %Y")
+            row.append(sg.Text(f"{cycle_start_str}", font=('Arial', 10, 'bold'), text_color=UIConstants.TEXT_COLOR,
                                background_color=UIConstants.BG_COLOR, size=(10, 1), justification='right', pad=(0, 2)))
-            
+
             for phase_idx in range(1, 29):
-                found_color = UIConstants.CELL_BG
+                # Priority: Period > Fertile > Blank
+                found_color = UIConstants.EMPTY_CELL_COLOR
                 for day_info in cycle_days:
                     if day_info["phase"] == phase_idx:
                         date_obj = day_info["date"]
@@ -71,9 +82,10 @@ class CalendarMoonUI:
                             break
                         elif cycle_data_logic.is_fertile_day(date_obj, data=cycle_data):
                             found_color = UIConstants.FERTILE_BG
-                
-                row.append(sg.Frame("", [[sg.Text("", size=(1, 1), background_color=found_color, pad=(0,0))]], 
-                                      border_width=0, background_color=found_color, size=(COL_WIDTH, 15), pad=(HORIZONTAL_PAD, 2)))
+
+                # Using sg.Graph for efficiency
+                row.append(sg.Graph((COL_WIDTH, 15), (0,0), (COL_WIDTH, 15),
+                                      background_color=found_color, pad=(HORIZONTAL_PAD, 2)))
             grid_rows.append(row)
 
         layout = [
